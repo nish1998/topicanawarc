@@ -1,0 +1,15 @@
+pandas==0.23.4
+news_please==1.2.53
+six==1.12.0
+numpy==1.15.4
+gensim==3.7.1
+hurry.filesize==0.9
+spacy==2.1.1
+Flask==1.0.2
+Scrapy==1.6.0
+warcio==1.6.3
+ago==0.0.93
+python_dateutil==2.8.0
+hurry==1.0
+scikit_learn==0.20.3
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.1.0/en_core_web_sm-2.1.0.tar.gz
