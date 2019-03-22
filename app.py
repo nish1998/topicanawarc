@@ -1,12 +1,9 @@
 
-#from __future__ import print_function # In python 2.7
 from flask import Flask, request, jsonify, render_template
 import numpy as np
 import pandas as pd
 import os
 import re, spacy, gensim
-#import sputnik
-#nlp = sputnik.package(spacy.about.__title__, spacy.about.__version__, 'en')
 # Sklearn
 from sklearn.decomposition import LatentDirichletAllocation, TruncatedSVD
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -16,19 +13,19 @@ import json
 import logging
 import os
 import datetime
-import commoncrawl_crawler as commoncrawl_crawler
+
 
 __author__ = "Felix Hamborg"
 __copyright__ = "Copyright 2017"
 __credits__ = ["Sebastian Nagel"]
 
-############ YOUR CONFIG ############
+############ CONFIG ############
 # download dir for warc files
 my_local_download_dir_warc = './cc_download_warc/'
 # download dir for articles
 my_local_download_dir_article = './cc_download_articles/'
 # hosts (if None or empty list, any host is OK)
-my_filter_valid_hosts = ['nytimes.com', 'www.nytimes.com', 'www.thehindu.com', 'thehindu.com']  # example: ['elrancaguino.cl']
+my_filter_valid_hosts = ['nytimes.com', 'www.nytimes.com', 'www.thehindu.com', 'thehindu.com', 'www.bbc.com', 'edition.cnn.com']  # example: ['elrancaguino.cl']
 # start date (if None, any date is OK as start date), as datetime
 my_filter_start_date = None  # datetime.datetime(2016, 1, 1)
 # end date (if None, any date is OK as end date), as datetime
@@ -66,7 +63,7 @@ app = Flask(__name__)
 
 nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
 
-url_half=""
+
 
 def __setup__():
     """
@@ -101,7 +98,8 @@ def on_valid_article_extracted(article):
     :return:
     """
     print(article.text)
-    list_awesome.append(str(article.text))
+    if(article.text!=None):
+        list_awesome.append(str(article.text))
     return
     # # do whatever you need to do with the article (e.g., save it to disk, store it in ElasticSearch, etc.)
     # with open(__get_pretty_filepath(my_local_download_dir_article, article), 'w') as outfile:
@@ -140,15 +138,18 @@ def show_topics(vectorizer, lda_model, n_words=20):
 def index():
     return render_template('index.html')
 
-@app.route("/complex")
-def complex():
-    return render_template('complex.html')
-
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
         datax = request.get_json()
-        url_half = str(datax["news_year"])+'/'+str(datax["news_month"])+'/CC-NEWS-'+str(datax["news_year"])+str(datax["news_month"])+str(datax["news_date"])
+        
+        dateis = str(datax["datepicker"])
+        global url_half
+
+        url_half = dateis[6:]+'/'+dateis[0:2]+'/CC-NEWS-'+dateis[6:]+dateis[0:2]+dateis[3:5]
+
+        import commoncrawl_crawler as commoncrawl_crawler
+        print(url_half)
         try:
             # df = pd.read_json('https://api.nytimes.com/svc/archive/v1/'+str(datax["news_year"])+'/'+str(datax["news_month"])+'.json?api-key=9LveXbUx48VQniWyMM5AYGaIGY9kgQSG')
             # df2= df['response'][0]
@@ -184,14 +185,13 @@ def predict():
 
             data_words = list(sent_to_words(data))
 
-            
             # nlp = spacy.load('en', disable=['parser', 'ner'])
 
             # Do lemmatization keeping only Noun, Adj, Verb, Adverb
             data_lemmatized = lemmatization(data_words, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
 
             vectorizer = CountVectorizer(analyzer='word',       
-                                        min_df=12,                        # minimum reqd occurences of a word 
+                                        min_df=5,                        # minimum reqd occurences of a word 
                                         stop_words='english',             # remove stop words
                                         lowercase=True,                   # convert all words to lowercase
                                         token_pattern='[a-zA-Z0-9]{3,}',  # num chars > 3
@@ -201,7 +201,7 @@ def predict():
             data_vectorized = vectorizer.fit_transform(data_lemmatized)
             # Materialize the sparse data
             data_dense = data_vectorized.todense()
-            lda_model = LatentDirichletAllocation(n_topics=int(datax["news_topics"]),               # Number of topics
+            lda_model = LatentDirichletAllocation(n_components=int(datax["news_topics"]),               # Number of topics
                                                 max_iter=10,               # Max learning iterations
                                                 learning_method='online',   
                                                 random_state=100,          # Random state
@@ -210,7 +210,7 @@ def predict():
                                                 n_jobs = -1,               # Use all available CPUs
                                                 )
             lda_output = lda_model.fit_transform(data_vectorized)
-            topic_keywords = show_topics(vectorizer, lda_model, n_words=15)        
+            topic_keywords = show_topics(vectorizer, lda_model, n_words=10)        
 
             # Topic - Keywords Dataframe
             df_topic_keywords = pd.DataFrame(topic_keywords)
@@ -218,12 +218,12 @@ def predict():
             df_topic_keywords.index = ['Topic '+str(i) for i in range(df_topic_keywords.shape[0])]
             return df_topic_keywords.to_json()
         except ValueError:
-            return "err"
+            return "error"
 
-        return jsonify(loaded_model.predict_proba(y).tolist())
+        return "error"
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-    #app.run()
+    # port = int(os.environ.get('PORT', 5000))
+    # app.run(host='0.0.0.0', port=port)
+    app.run()

@@ -4,6 +4,7 @@ Provides functionality to crawl and extract news articles from a single WARC fil
 and host list, can be defined. Currently, the WARC file will be downloaded to the path WORKINGDIR/cc_download_warc, if
 not otherwise specified.
 """
+from __main__ import url_half
 import logging
 import os
 import subprocess
@@ -30,7 +31,7 @@ class CommonCrawlExtractor:
     # download dir for warc files
     __local_download_dir_warc = './cc_download_warc/'
     # hosts (if None or empty list, any host is OK)
-    __filter_valid_hosts = ['nytimes.com', 'www.nytimes.com', 'www.thehindu.com', 'thehindu.com']  # example: ['elrancaguino.cl']
+    __filter_valid_hosts = ['nytimes.com', 'www.nytimes.com', 'www.thehindu.com', 'thehindu.com', 'www.bbc.com', 'edition.cnn.com', 'timesofindia.indiatimes.com']  # example: ['elrancaguino.cl']
     # start date (if None, any date is OK as start date), as datetime
     __filter_start_date = None
     # end date (if None, any date is OK as end date)
@@ -157,7 +158,7 @@ class CommonCrawlExtractor:
         # cleanup
         subprocess.getoutput("rm tmpaws.txt")
         # get the remote info
-        cmd = "aws s3 ls --recursive s3://commoncrawl/crawl-data/CC-NEWS/2019/01/CC-NEWS-20190127 --no-sign-request > tmpaws.txt && " \
+        cmd = "aws s3 ls --recursive s3://commoncrawl/crawl-data/CC-NEWS/"+url_half+" --no-sign-request > tmpaws.txt && " \
               "awk '{ print $4 }' tmpaws.txt && " \
               "rm tmpaws.txt"
         self.__logger.info('executing: %s', cmd)

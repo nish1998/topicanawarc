@@ -4,7 +4,7 @@ Provides functionality to crawl and extract news articles from commoncrawl.org. 
 and host list, can be defined. Currently, all WARC files will be downloaded to the path WORKINGDIR/cc_download_warc, if
 not otherwise specified.
 """
-from app import *
+from __main__ import url_half
 import logging
 import os
 import subprocess
@@ -84,6 +84,8 @@ def __get_remote_index():
     # cleanup
     subprocess.getoutput("rm tmpaws.txt")
     # get the remote info
+    print("ok he")
+    print(url_half)
     cmd = "aws s3 ls --recursive s3://commoncrawl/crawl-data/CC-NEWS/"+url_half+" --no-sign-request > .tmpaws.txt && " \
           "awk '{ print $4 }' .tmpaws.txt && " \
           "rm .tmpaws.txt"
@@ -99,15 +101,16 @@ def __get_list_of_fully_extracted_warc_urls():
     Reads in the log file that contains a list of all previously, fully extracted WARC urls
     :return:
     """
-    if not os.path.isfile(__log_pathname_fully_extracted_warcs):
-        return []
+    return []
+    # if not os.path.isfile(__log_pathname_fully_extracted_warcs):
+    #     return []
 
-    with open(__log_pathname_fully_extracted_warcs) as log_file:
-        list_warcs = log_file.readlines()
-    # remove break lines
-    list_warcs = [x.strip() for x in list_warcs]
+    # with open(__log_pathname_fully_extracted_warcs) as log_file:
+    #     list_warcs = log_file.readlines()
+    # # remove break lines
+    # list_warcs = [x.strip() for x in list_warcs]
 
-    return list_warcs
+    # return list_warcs
 
 
 def __start_commoncrawl_extractor(warc_download_url, callback_on_article_extracted=None, valid_hosts=None,
